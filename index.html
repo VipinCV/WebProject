@@ -11,7 +11,7 @@
 
     <script>
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/nohttps://mobileapi-fbpw.onrender.com/notificationhub", {
+            .withUrl("https://mobileapi-fbpw.onrender.com/notificationhub", {
                 withCredentials: true
             })
             .configureLogging(signalR.LogLevel.Information)
