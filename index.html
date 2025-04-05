@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SignalR + Redis</title>
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@7.0.5/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+  <h1>Messages</h1>
+  <ul id="messages"></ul>
+
+  <script>
+    async function startSignalR() {
+      const res = await fetch("http://localhost:5000/generate-token");
+      const { token } = await res.json();
+
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5000/notificationhub", {
+          accessTokenFactory: () => token
+        })
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+      connection.on("ReceiveMessage", message => {
+        const li = document.createElement("li");
+        li.textContent = message;
+        document.getElementById("messages").appendChild(li);
+      });
+
+      await connection.start();
+      console.log("SignalR connected!");
+    }
+
+    startSignalR();
+  </script>
+</body>
+</html>
