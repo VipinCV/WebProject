@@ -1,36 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SignalR + Redis</title>
-  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@7.0.5/dist/browser/signalr.min.js"></script>
+    <meta charset="UTF-8">
+    <title>SignalR with Plain JS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 </head>
 <body>
-  <h1>Messages</h1>
-  <ul id="messages"></ul>
+    <h1>SignalR Test</h1>
+    <div id="messages"></div>
 
-  <script>
-    async function startSignalR() {
-      const res = await fetch("http://localhost:5000/generate-token");
-      const { token } = await res.json();
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/nohttps://mobileapi-fbpw.onrender.com/notificationhub", {
+                withCredentials: true
+            })
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
 
-      const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5000/notificationhub", {
-          accessTokenFactory: () => token
-        })
-        .configureLogging(signalR.LogLevel.Information)
-        .build();
+        connection.on("ReceiveMessage", function (message) {
+            console.log("Received message from SignalR:", message);
+            const div = document.getElementById("messages");
+            const p = document.createElement("p");
+            p.textContent = message;
+            div.appendChild(p);
+        });
 
-      connection.on("ReceiveMessage", message => {
-        const li = document.createElement("li");
-        li.textContent = message;
-        document.getElementById("messages").appendChild(li);
-      });
-
-      await connection.start();
-      console.log("SignalR connected!");
-    }
-
-    startSignalR();
-  </script>
+        connection.start()
+            .then(() => console.log("Connected to SignalR hub"))
+            .catch(err => console.error("SignalR connection failed:", err));
+    </script>
 </body>
 </html>
