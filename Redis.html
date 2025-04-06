@@ -30,10 +30,7 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    userId: userId,
-                    message: message
-                })
+                body: "full"
             })
             .then(response => response.json())
             .then(data => {
