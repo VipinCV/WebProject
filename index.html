@@ -1,33 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>SignalR with Plain JS</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>SignalR Stylish Chat</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      background-color: #ffffffee;
+      width: 400px;
+      max-width: 95%;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      background: linear-gradient(90deg, #4e54c8, #8f94fb);
+      color: white;
+      padding: 16px;
+      font-size: 1.25em;
+      text-align: center;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+
+    .message {
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      background-color: #e1f5fe;
+      border-radius: 20px;
+      max-width: 80%;
+      word-wrap: break-word;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .message.user {
+      background-color: #dcedc8;
+      align-self: flex-end;
+    }
+
+    .chat-footer {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: #fff;
+    }
+
+    .chat-footer input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .chat-footer button {
+      margin-left: 10px;
+      background-color: #4e54c8;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .chat-footer button:hover {
+      background-color: #5d63e5;
+    }
+  </style>
 </head>
 <body>
-    <h1>SignalR Test</h1>
-    <div id="messages"></div>
+  <div class="chat-container">
+    <div class="chat-header">SignalR Chat</div>
+    <div id="messages" class="messages"></div>
+    <div class="chat-footer">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
 
-    <script>
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://mobileapi-fbpw.onrender.com/notificationhub", {
-                withCredentials: true
-            })
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
+  <script>
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("https://mobileapi-fbpw.onrender.com/notificationhub", {
+        withCredentials: true
+      })
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
 
-        connection.on("ReceiveMessage", function (message) {
-            console.log("Received message from SignalR:", message);
-            const div = document.getElementById("messages");
-            const p = document.createElement("p");
-            p.textContent = message;
-            div.appendChild(p);
+    connection.on("ReceiveMessage", function (message) {
+      console.log("Received message:", message);
+      const messagesDiv = document.getElementById("messages");
+      const msg = document.createElement("div");
+      msg.classList.add("message");
+      msg.textContent = message;
+      messagesDiv.appendChild(msg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    connection.start()
+      .then(() => console.log("Connected to SignalR hub"))
+      .catch(err => console.error("SignalR connection failed:", err));
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const input = document.getElementById("messageInput");
+      const message = input.value.trim();
+      if (message) {
+        // show user message instantly
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message", "user");
+        msgDiv.textContent = message;
+        document.getElementById("messages").appendChild(msgDiv);
+
+        // send message to API
+        fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(message)
         });
 
-        connection.start()
-            .then(() => console.log("Connected to SignalR hub"))
-            .catch(err => console.error("SignalR connection failed:", err));
-    </script>
+        input.value = "";
+      }
+    });
+
+    document.getElementById("messageInput").addEventListener("keypress", e => {
+      if (e.key === "Enter") document.getElementById("sendBtn").click();
+    });
+  </script>
 </body>
 </html>
