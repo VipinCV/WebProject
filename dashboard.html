@@ -1,87 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Live Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .dashboard-card {
-            border-radius: 1rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .table thead {
-            background-color: #0d6efd;
-            color: #fff;
-        }
-
-        .table tbody tr {
-            transition: background-color 0.2s ease-in-out;
-        }
-
-        .table tbody tr:hover {
-            background-color: #e9f5ff;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>SignalR Live Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .dashboard {
+      padding: 30px;
+    }
+    .message-table {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .message-row {
+      transition: all 0.3s ease;
+    }
+    .message-row.new {
+      background-color: #e0f7fa;
+    }
+  </style>
 </head>
 <body>
-<div class="container py-5">
-    <h2 class="text-center mb-4">SignalR Live Dashboard</h2>
+<div class="container dashboard">
+  <h2 class="mb-4">Live SignalR Dashboard</h2>
 
-    <div class="card dashboard-card">
-        <div class="card-header bg-primary text-white">
-            Live Messages
-        </div>
-        <div class="card-body">
-            <table class="table table-striped" id="messageTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Message</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody id="messageBody">
-                    <!-- Messages will appear here -->
-                </tbody>
-            </table>
-        </div>
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <canvas id="liveChart" height="200"></canvas>
     </div>
+    <div class="col-md-6">
+      <h5>Messages</h5>
+      <div class="table-responsive message-table">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr><th>#</th><th>Message</th><th>Time</th></tr>
+          </thead>
+          <tbody id="messageTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
+<audio id="notifSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
+
 <script>
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("https://mobileapi-fbpw.onrender.com/notificationhub", {
-            withCredentials: true
-        })
-        .configureLogging(signalR.LogLevel.Information)
-        .build();
+  const connection = new signalR.HubConnectionBuilder()
+    .withUrl("https://mobileapi-fbpw.onrender.com/notificationhub")
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
 
-    let messageCount = 0;
+  let msgCount = 0;
 
-    connection.on("ReceiveMessage", function (message) {
-        messageCount++;
-        const table = document.getElementById("messageBody");
-        const row = document.createElement("tr");
+  // Chart setup
+  const ctx = document.getElementById('liveChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Messages Over Time',
+        data: [],
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
 
-        row.innerHTML = `
-            <td>${messageCount}</td>
-            <td>${message}</td>
-            <td>${new Date().toLocaleTimeString()}</td>
-        `;
+  connection.on("ReceiveMessage", message => {
+    msgCount++;
+    const now = new Date().toLocaleTimeString();
 
-        table.prepend(row); // Add new messages to the top
-    });
+    // Table update
+    const table = document.getElementById("messageTableBody");
+    const row = document.createElement("tr");
+    row.classList.add("message-row", "new");
+    row.innerHTML = `<td>${msgCount}</td><td>${message}</td><td>${now}</td>`;
+    table.prepend(row);
+    setTimeout(() => row.classList.remove("new"), 2000);
 
-    connection.start()
-        .then(() => console.log("Connected to SignalR hub"))
-        .catch(err => console.error("SignalR connection failed:", err));
+    // Chart update
+    if (chart.data.labels.length > 10) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.data.labels.push(now);
+    chart.data.datasets[0].data.push(msgCount);
+    chart.update();
+
+    // Play notification sound
+    document.getElementById("notifSound").play();
+  });
+
+  connection.start()
+    .then(() => console.log("SignalR connected"))
+    .catch(err => console.error("SignalR connection error:", err));
 </script>
-
 </body>
 </html>
