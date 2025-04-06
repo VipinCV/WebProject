@@ -1,45 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Redis Publisher</title>
+  <meta charset="UTF-8">
+  <title>Publish to Redis</title>
 </head>
 <body>
-    <h2>Send Message to Redis Channel</h2>
-    <form id="publishForm">
-        <label for="userId">User ID:</label><br>
-        <input type="text" id="userId" name="userId" required><br><br>
+  <h2>Publish Message to Redis</h2>
+  <form id="publishForm">
+    <label for="message">Message:</label><br>
+    <input type="text" id="message" name="message" required><br><br>
+    <button type="submit">Publish</button>
+  </form>
 
-        <label for="message">Message:</label><br>
-        <input type="text" id="message" name="message" required><br><br>
+  <p id="response"></p>
 
-        <button type="submit">Publish</button>
-    </form>
+  <script>
+    document.getElementById("publishForm").addEventListener("submit", function(e) {
+      e.preventDefault();
 
-    <p id="response"></p>
+      const message = document.getElementById("message").value;
 
-    <script>
-        document.getElementById("publishForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-
-            const userId = document.getElementById("userId").value;
-            const message = document.getElementById("message").value;
-
-            fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: "full"
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("response").textContent = "Published successfully!";
-            })
-            .catch(error => {
-                document.getElementById("response").textContent = "Error: " + error;
-            });
-        });
-    </script>
+      fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "*/*"
+        },
+        body: JSON.stringify(message) // sending raw string
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.text(); // if response is not JSON
+      })
+      .then(data => {
+        document.getElementById("response").textContent = "Published: " + data;
+      })
+      .catch(error => {
+        document.getElementById("response").textContent = "Error: " + error;
+      });
+    });
+  </script>
 </body>
 </html>
