@@ -3,16 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <title>Publish to Redis</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #ffffffdd;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #444;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #response {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-  <h2>Publish Message to Redis</h2>
-  <form id="publishForm">
-    <label for="message">Message:</label><br>
-    <input type="text" id="message" name="message" required><br><br>
-    <button type="submit">Publish</button>
-  </form>
-
-  <p id="response"></p>
+  <div class="container">
+    <h2>Publish Message to Redis</h2>
+    <form id="publishForm">
+      <label for="message">Message:</label>
+      <input type="text" id="message" name="message" required>
+      <button type="submit">Publish</button>
+    </form>
+    <p id="response"></p>
+  </div>
 
   <script>
     document.getElementById("publishForm").addEventListener("submit", function(e) {
@@ -23,19 +87,13 @@
       fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "*/*"
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(message) // sending raw string
+        body: JSON.stringify(message)
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.text(); // if response is not JSON
-      })
+      .then(response => response.text())
       .then(data => {
-        document.getElementById("response").textContent = "Published: " + data;
+        document.getElementById("response").textContent = "Success: " + data;
       })
       .catch(error => {
         document.getElementById("response").textContent = "Error: " + error;
