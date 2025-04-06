@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redis Publisher</title>
+</head>
+<body>
+    <h2>Send Message to Redis Channel</h2>
+    <form id="publishForm">
+        <label for="userId">User ID:</label><br>
+        <input type="text" id="userId" name="userId" required><br><br>
+
+        <label for="message">Message:</label><br>
+        <input type="text" id="message" name="message" required><br><br>
+
+        <button type="submit">Publish</button>
+    </form>
+
+    <p id="response"></p>
+
+    <script>
+        document.getElementById("publishForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const userId = document.getElementById("userId").value;
+            const message = document.getElementById("message").value;
+
+            fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response").textContent = "Published successfully!";
+            })
+            .catch(error => {
+                document.getElementById("response").textContent = "Error: " + error;
+            });
+        });
+    </script>
+</body>
+</html>
