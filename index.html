@@ -17,6 +17,30 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      flex-direction: column;
+    }
+
+    .nav {
+      width: 100%;
+      background: #4e54c8;
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 20px;
+      font-weight: bold;
+      font-size: 1.1em;
+      transition: opacity 0.3s ease;
+    }
+
+    .nav a:hover {
+      opacity: 0.8;
     }
 
     .chat-container {
@@ -93,6 +117,12 @@
   </style>
 </head>
 <body>
+
+  <div class="nav">
+    <a href="Redis.html">Redis</a>
+    <a href="dashboard.html">Dashboard</a>
+  </div>
+
   <div class="chat-container">
     <div class="chat-header">SignalR Chat</div>
     <div id="messages" class="messages"></div>
@@ -128,13 +158,11 @@
       const input = document.getElementById("messageInput");
       const message = input.value.trim();
       if (message) {
-        // show user message instantly
         const msgDiv = document.createElement("div");
         msgDiv.classList.add("message", "user");
         msgDiv.textContent = message;
         document.getElementById("messages").appendChild(msgDiv);
 
-        // send message to API
         fetch("https://mobileapi-fbpw.onrender.com/api/redis/publish", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,4 +178,4 @@
     });
   </script>
 </body>
-</html>
+</html
