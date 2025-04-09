@@ -39,6 +39,19 @@
     .toast.show { opacity: 1; pointer-events: auto; bottom: 40px; }
     .toast.success { background-color: #28a745; }
     .toast.error { background-color: #dc3545; }
+
+    #saving-spinner {
+      display: none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      padding: 20px;
+      z-index: 99999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -62,6 +75,16 @@
 
 <div id="map"></div>
 <div id="toast" class="toast"></div>
+
+<!-- Saving Spinner -->
+<div id="saving-spinner">
+  <svg width="40" height="40" viewBox="0 0 50 50">
+    <circle cx="25" cy="25" r="20" stroke="#1d3557" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="31.4 31.4">
+      <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" from="0 25 25" to="360 25 25" />
+    </circle>
+  </svg>
+  <div style="margin-top: 10px; font-size: 14px; color: #333;">Saving polygon...</div>
+</div>
 
 <!-- Leaflet & Plugins -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -99,6 +122,14 @@ function showToast(msg, type = "success") {
   setTimeout(() => toast.className = "toast", 3000);
 }
 
+// Spinner helpers
+function showSpinner() {
+  document.getElementById("saving-spinner").style.display = "block";
+}
+function hideSpinner() {
+  document.getElementById("saving-spinner").style.display = "none";
+}
+
 // Polygon Save
 map.on('draw:created', function (event) {
   const layer = event.layer;
@@ -113,6 +144,8 @@ map.on('draw:created', function (event) {
     return;
   }
 
+  showSpinner();
+
   fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -123,7 +156,8 @@ map.on('draw:created', function (event) {
     drawnItems.addLayer(layer);
     showToast("✅ Polygon saved!");
   })
-  .catch(() => showToast("❌ Failed to save polygon.", "error"));
+  .catch(() => showToast("❌ Failed to save polygon.", "error"))
+  .finally(() => hideSpinner());
 });
 
 // Load Polygons
