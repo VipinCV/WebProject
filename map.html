@@ -87,8 +87,9 @@
     .then(res => res.json())
     .then(polygons => {
       polygons.forEach(p => {
-        const coords = p.polygon.coordinates[0].map(([lng, lat]) => [lat, lng]);
-        const polygon = L.polygon(coords, { color: 'blue' });
+          const geo = JSON.parse(p.polygon); // since it's a string
+          const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
+           const polygon = L.polygon(coords, { color: 'blue' });
         drawnItems.addLayer(polygon);
       });
     })
