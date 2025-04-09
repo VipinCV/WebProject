@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Polygon Drawing Map</title>
+  <title>Polygon + Distance Map</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -14,12 +14,10 @@
       margin: 0;
       font-family: "Segoe UI", sans-serif;
     }
-
     #map {
       height: 100vh;
       width: 100%;
     }
-
     #controls {
       position: absolute;
       top: 20px;
@@ -29,23 +27,20 @@
       padding: 15px 20px;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-      width: 250px;
+      width: 300px;
     }
-
     #controls h3 {
       margin-top: 0;
       font-size: 18px;
       margin-bottom: 10px;
       color: #333;
     }
-
     #controls label {
       display: block;
       margin-top: 10px;
       font-size: 14px;
       color: #555;
     }
-
     #controls input {
       width: 100%;
       padding: 8px;
@@ -54,7 +49,22 @@
       margin-top: 4px;
       font-size: 14px;
     }
-
+    #controls button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #1d3557;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #distance {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #1d3557;
+    }
     .toast {
       position: fixed;
       bottom: 20px;
@@ -71,17 +81,14 @@
       transition: opacity 0.5s ease, bottom 0.5s ease;
       z-index: 9999;
     }
-
     .toast.show {
       opacity: 1;
       pointer-events: auto;
       bottom: 40px;
     }
-
     .toast.success {
       background-color: #28a745;
     }
-
     .toast.error {
       background-color: #dc3545;
     }
@@ -90,43 +97,44 @@
 <body>
 
 <div id="controls">
-  <h3>Polygon Info</h3>
-  <label>
-    Name:
+  <h3>Polygon & Route Info</h3>
+  <label>Name:
     <input type="text" id="name" placeholder="Enter area name" required />
   </label>
-  <label>
-    Description:
+  <label>Description:
     <input type="text" id="desc" placeholder="Enter description" />
   </label>
+  <label>From:
+    <input type="text" id="from" placeholder="Enter from address" />
+  </label>
+  <label>To:
+    <input type="text" id="to" placeholder="Enter to address" />
+  </label>
+  <button onclick="calculateDistance()">Calculate Distance</button>
+  <div id="distance">Distance: -</div>
 </div>
 
 <div id="map"></div>
 <div id="toast" class="toast"></div>
 
-<!-- Leaflet JS -->
+<!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
 <script>
+  const API_BASE = "https://mobileapi-fbpw.onrender.com/api/Polygon";
   const map = L.map('map').setView([9.1345313, 76.8099686], 13);
-
-  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
-
-  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri'
-  });
-
-  L.control.layers({
-    "OpenStreetMap": osm,
-    "Satellite View": satellite
-  }).addTo(map);
-
   const drawnItems = new L.FeatureGroup();
   map.addLayer(drawnItems);
 
+  // Base maps
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+  const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri'
+  });
+  L.control.layers({ "OSM": osm, "Satellite": satellite }).addTo(map);
+
+  // Drawing control
   const drawControl = new L.Control.Draw({
     draw: {
       polygon: true,
@@ -142,22 +150,21 @@
   });
   map.addControl(drawControl);
 
-  const API_BASE = "https://mobileapi-fbpw.onrender.com/api/Polygon";
-
-  function showToast(message, type = "success") {
+  function showToast(msg, type = "success") {
     const toast = document.getElementById("toast");
-    toast.textContent = message;
+    toast.textContent = msg;
     toast.className = `toast show ${type}`;
     setTimeout(() => toast.className = "toast", 3000);
   }
 
+  // Save polygon
   map.on('draw:created', function (event) {
     const layer = event.layer;
     const latlngs = layer.getLatLngs()[0];
     const coords = latlngs.map(p => [p.lng, p.lat]);
 
     const name = document.getElementById("name").value.trim();
-    const description = document.getElementById("desc").value.trim();
+    const desc = document.getElementById("desc").value.trim() || "No description";
 
     if (!name) {
       showToast("Please enter a name for the polygon.", "error");
@@ -167,26 +174,20 @@
     fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name,
-        description: description || "No description",
-        coordinates: coords
-      })
+      body: JSON.stringify({ name, description: desc, coordinates: coords })
     })
     .then(res => {
       if (!res.ok) throw new Error("Failed to save polygon.");
       return res.json();
     })
-    .then(data => {
+    .then(() => {
       drawnItems.addLayer(layer);
-      showToast("✅ Polygon saved successfully!");
+      showToast("✅ Polygon saved!");
     })
-    .catch(err => {
-      console.error(err);
-      showToast("❌ Failed to save polygon.", "error");
-    });
+    .catch(() => showToast("❌ Failed to save polygon.", "error"));
   });
 
+  // Load existing polygons
   fetch(API_BASE)
     .then(res => res.json())
     .then(polygons => {
@@ -197,10 +198,46 @@
         drawnItems.addLayer(polygon);
       });
     })
-    .catch(err => {
-      console.error("❌ Failed to load polygons:", err);
-      showToast("Failed to load existing polygons.", "error");
+    .catch(() => showToast("❌ Failed to load polygons.", "error"));
+
+  // Distance calculation
+  function calculateDistance() {
+    const from = document.getElementById("from").value.trim();
+    const to = document.getElementById("to").value.trim();
+    if (!from || !to) {
+      showToast("Please enter both From and To addresses", "error");
+      return;
+    }
+
+    Promise.all([
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(from)}`),
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(to)}`)
+    ])
+    .then(async ([fromRes, toRes]) => {
+      const fromData = await fromRes.json();
+      const toData = await toRes.json();
+
+      if (!fromData.length || !toData.length) {
+        showToast("Failed to find one or both locations", "error");
+        return;
+      }
+
+      const fromLatLng = L.latLng(fromData[0].lat, fromData[0].lon);
+      const toLatLng = L.latLng(toData[0].lat, toData[0].lon);
+
+      const distance = fromLatLng.distanceTo(toLatLng) / 1000;
+      document.getElementById("distance").innerText = `Distance: ${distance.toFixed(2)} km`;
+
+      L.marker(fromLatLng).addTo(map).bindPopup("From").openPopup();
+      L.marker(toLatLng).addTo(map).bindPopup("To");
+
+      L.polyline([fromLatLng, toLatLng], { color: "red" }).addTo(map);
+      map.fitBounds(L.latLngBounds([fromLatLng, toLatLng]));
+
+    }).catch(() => {
+      showToast("Error fetching location", "error");
     });
+  }
 </script>
 
 </body>
