@@ -54,6 +54,37 @@
       margin-top: 4px;
       font-size: 14px;
     }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease, bottom 0.5s ease;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      bottom: 40px;
+    }
+
+    .toast.success {
+      background-color: #28a745;
+    }
+
+    .toast.error {
+      background-color: #dc3545;
+    }
   </style>
 </head>
 <body>
@@ -62,7 +93,7 @@
   <h3>Polygon Info</h3>
   <label>
     Name:
-    <input type="text" id="name" placeholder="Enter area name" />
+    <input type="text" id="name" placeholder="Enter area name" required />
   </label>
   <label>
     Description:
@@ -71,6 +102,7 @@
 </div>
 
 <div id="map"></div>
+<div id="toast" class="toast"></div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -79,7 +111,6 @@
 <script>
   const map = L.map('map').setView([9.1345313, 76.8099686], 13);
 
-  // Base layers
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
@@ -113,20 +144,32 @@
 
   const API_BASE = "https://mobileapi-fbpw.onrender.com/api/Polygon";
 
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.className = `toast show ${type}`;
+    setTimeout(() => toast.className = "toast", 3000);
+  }
+
   map.on('draw:created', function (event) {
     const layer = event.layer;
     const latlngs = layer.getLatLngs()[0];
     const coords = latlngs.map(p => [p.lng, p.lat]);
 
-    const name = document.getElementById("name").value || "Unnamed Area";
-    const description = document.getElementById("desc").value || "No description";
+    const name = document.getElementById("name").value.trim();
+    const description = document.getElementById("desc").value.trim();
+
+    if (!name) {
+      showToast("Please enter a name for the polygon.", "error");
+      return;
+    }
 
     fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: name,
-        description: description,
+        description: description || "No description",
         coordinates: coords
       })
     })
@@ -135,16 +178,15 @@
       return res.json();
     })
     .then(data => {
-      alert("✅ Polygon saved!");
       drawnItems.addLayer(layer);
+      showToast("✅ Polygon saved successfully!");
     })
     .catch(err => {
       console.error(err);
-      alert("❌ Failed to save polygon.");
+      showToast("❌ Failed to save polygon.", "error");
     });
   });
 
-  // Load existing polygons
   fetch(API_BASE)
     .then(res => res.json())
     .then(polygons => {
@@ -157,6 +199,7 @@
     })
     .catch(err => {
       console.error("❌ Failed to load polygons:", err);
+      showToast("Failed to load existing polygons.", "error");
     });
 </script>
 
