@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Polygon Drawing Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Leaflet Draw CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
+
+  <style>
+    #map { height: 100vh; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Leaflet Draw JS -->
+<script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+
+<script>
+  const map = L.map('map').setView([37.7749, -122.4194], 13); // Center on San Francisco for example
+
+  // Add base tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Feature Group to hold drawn layers
+  const drawnItems = new L.FeatureGroup();
+  map.addLayer(drawnItems);
+
+  // Add Leaflet Draw control
+  const drawControl = new L.Control.Draw({
+    draw: {
+      polygon: true,
+      polyline: false,
+      rectangle: false,
+      circle: false,
+      marker: false,
+      circlemarker: false
+    },
+    edit: {
+      featureGroup: drawnItems
+    }
+  });
+  map.addControl(drawControl);
+
+  // API URL
+  const API_BASE = "https://localhost:5001/api/locationdrawings"; // change if hosted elsewhere
+
+  // Handle polygon creation
+  map.on('draw:created', function (event) {
+    const layer = event.layer;
+    const latlngs = layer.getLatLngs()[0];
+    const coords = latlngs.map(p => [p.lng, p.lat]);
+
+    fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: "User Drawn Area",
+        description: "Polygon from Leaflet",
+        coordinates: coords
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("Polygon saved with ID: " + data.id);
+      drawnItems.addLayer(layer);
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to save polygon.");
+    });
+  });
+
+  // Load existing polygons
+  fetch(API_BASE)
+    .then(res => res.json())
+    .then(polygons => {
+      polygons.forEach(p => {
+        const coords = p.polygon.coordinates[0].map(([lng, lat]) => [lat, lng]);
+        const polygon = L.polygon(coords, { color: 'blue' });
+        drawnItems.addLayer(polygon);
+      });
+    });
+</script>
+
+</body>
+</html>
