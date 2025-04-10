@@ -167,7 +167,7 @@ fetch(API_BASE)
     data.forEach(p => {
       const geo = JSON.parse(p.polygon);
       const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
-      drawnItems.addLayer(L.polygon(coords, { color: 'blue' }));
+      drawnItems.addLayer(L.polygon(coords, { color: p.color }));
     });
   });
 
