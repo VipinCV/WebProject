@@ -3,197 +3,56 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Travel Coordinator</title>
+  <title>Vue SPA with Routing</title>
+  <script src="https://unpkg.com/vue@3"></script>
+  <script src="https://unpkg.com/vue-router@4"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    nav { background: #333; padding: 10px; color: #fff; }
+    nav a {
+      color: white; text-decoration: none; margin-right: 15px;
     }
-
-    body {
-      background-color: #f5f9fc;
+    nav a.router-link-active {
+      font-weight: bold; text-decoration: underline;
     }
-
-    /* Top navigation bar */
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      background-color: #0f4c75;
-      padding: 1rem 2rem;
-      color: white;
-      position: relative;
-    }
-
-    .navbar .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .navbar ul {
-      list-style: none;
-      display: flex;
-      gap: 2rem;
-      position: relative;
-    }
-
-    .navbar ul li {
-      position: relative;
-    }
-
-    .navbar a {
-      color: white;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .navbar ul li:hover .dropdown {
-      display: block;
-    }
-
-    .dropdown {
-      display: none;
-      position: absolute;
-      top: 2rem;
-      left: 0;
-      background-color: #3282b8;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .dropdown a {
-      display: block;
-      padding: 0.5rem 1rem;
-      white-space: nowrap;
-    }
-
-    .dropdown a:hover {
-      background-color: #1b262c;
-    }
-
-    /* Layout */
-    .container {
-      display: flex;
-      height: calc(100vh - 70px);
-    }
-
-    .left-panel {
-      width: 35%;
-      background-color: #ffffff;
-      padding: 2rem;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-    }
-
-    .left-panel h2 {
-      margin-bottom: 1rem;
-      color: #0f4c75;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: #1b262c;
-    }
-
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-
-    .right-panel {
-      flex-grow: 1;
-    }
-
-    .map-container {
-      width: 100%;
-      height: 100%;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-      }
-      .left-panel {
-        width: 100%;
-        height: auto;
-      }
-    }
+    .view { padding: 20px; }
   </style>
 </head>
 <body>
-
-  <header class="navbar">
-    <div class="logo">Travel Coordinator</div>
-    <ul>
-      <li>
-        <a href="#">Home</a>
-        <div class="dropdown">
-          <a href="#">Dashboard</a>
-          <a href="#">Destinations</a>
-        </div>
-      </li>
-      <li>
-        <a href="#">About</a>
-        <div class="dropdown">
-          <a href="#">Team</a>
-          <a href="#">Contact</a>
-        </div>
-      </li>
-    </ul>
-  </header>
-
-  <div class="container">
-    <div class="left-panel">
-      <h2>Plan Your Trip</h2>
-      <div class="form-group">
-        <label for="destination">Destination</label>
-        <input type="text" id="destination" placeholder="Enter destination" />
-      </div>
-      <div class="form-group">
-        <label for="start-date">Start Date</label>
-        <input type="date" id="start-date" />
-      </div>
-      <div class="form-group">
-        <label for="end-date">End Date</label>
-        <input type="date" id="end-date" />
-      </div>
-      <div class="form-group">
-        <label for="transport">Transport Mode</label>
-        <select id="transport">
-          <option value="flight">Flight</option>
-          <option value="train">Train</option>
-          <option value="bus">Bus</option>
-          <option value="car">Car</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="right-panel">
-      <div class="map-container">
-        <!-- Google Maps Embed -->
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0313868997647!2d-122.41941528468199!3d37.77492977975942!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80858064d3ec4a17%3A0xabc22c1b67b1cb0b!2sSan%20Francisco%2C%20CA%2C%20USA!5e0!3m2!1sen!2sin!4v1649383870202!5m2!1sen!2sin"
-          allowfullscreen=""
-          loading="lazy"
-        ></iframe>
-      </div>
+  <div id="app">
+    <nav>
+      <router-link to="/">Home</router-link>
+      <router-link to="/about">About</router-link>
+      <router-link to="/contact">Contact</router-link>
+    </nav>
+    <div class="view">
+      <router-view></router-view>
     </div>
   </div>
 
+  <script>
+    // Define your components
+    const Home = { template: `<h2>🏠 Welcome to the Home Page</h2><p>This is the home page of our SPA.</p>` };
+    const About = { template: `<h2>📄 About Us</h2><p>This is the about page. Here we describe our app.</p>` };
+    const Contact = { template: `<h2>📬 Contact</h2><p>This is the contact page. Reach out to us!</p>` };
+
+    // Define routes
+    const routes = [
+      { path: '/', component: Home },
+      { path: '/about', component: About },
+      { path: '/contact', component: Contact },
+    ];
+
+    // Create the router
+    const router = VueRouter.createRouter({
+      history: VueRouter.createWebHashHistory(),
+      routes
+    });
+
+    // Create the app
+    const app = Vue.createApp({});
+    app.use(router);
+    app.mount('#app');
+  </script>
 </body>
 </html>
