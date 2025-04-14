@@ -174,7 +174,7 @@ fetch(API_BASE)
       const geo = JSON.parse(p.polygon);
       const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
       const polygon = L.polygon(coords, { color: p.color });
-      polygon.bindTooltip(p.description || "No description", {
+      polygon.bindTooltip(p.name || "No description", {
         permanent: true,
         direction: "center",
         className: "polygon-label"
