@@ -52,6 +52,16 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       text-align: center;
     }
+
+    .polygon-label {
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      color: #1d3557;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -92,18 +102,16 @@
 
 <script>
 const API_BASE = "https://mobileapi-fbpw.onrender.com/api/Polygon";
-const ORS_API_KEY = "5b3ce3597851110001cf6248a380fe48936f424e8f04148721fa4205"; // <-- replace if needed
+const ORS_API_KEY = "5b3ce3597851110001cf6248a380fe48936f424e8f04148721fa4205";
 
 const map = L.map('map').setView([9.1345, 76.8099], 13);
 const drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 
-// Base Layers
 const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' });
 L.control.layers({ "OSM": osm, "Satellite": satellite }).addTo(map);
 
-// Drawing Tool
 const drawControl = new L.Control.Draw({
   draw: {
     polygon: true, polyline: false,
@@ -114,7 +122,6 @@ const drawControl = new L.Control.Draw({
 });
 map.addControl(drawControl);
 
-// Toast Helper
 function showToast(msg, type = "success") {
   const toast = document.getElementById("toast");
   toast.textContent = msg;
@@ -122,7 +129,6 @@ function showToast(msg, type = "success") {
   setTimeout(() => toast.className = "toast", 3000);
 }
 
-// Spinner helpers
 function showSpinner() {
   document.getElementById("saving-spinner").style.display = "block";
 }
@@ -130,7 +136,6 @@ function hideSpinner() {
   document.getElementById("saving-spinner").style.display = "none";
 }
 
-// Polygon Save
 map.on('draw:created', function (event) {
   const layer = event.layer;
   const latlngs = layer.getLatLngs()[0];
@@ -153,6 +158,7 @@ map.on('draw:created', function (event) {
   })
   .then(res => res.ok ? res.json() : Promise.reject("Failed"))
   .then(() => {
+    layer.bindTooltip(desc, { permanent: true, direction: "center", className: "polygon-label" });
     drawnItems.addLayer(layer);
     showToast("✅ Polygon saved!");
   })
@@ -167,11 +173,16 @@ fetch(API_BASE)
     data.forEach(p => {
       const geo = JSON.parse(p.polygon);
       const coords = geo.coordinates[0].map(([lng, lat]) => [lat, lng]);
-      drawnItems.addLayer(L.polygon(coords, { color: p.color }));
+      const polygon = L.polygon(coords, { color: p.color });
+      polygon.bindTooltip(p.description || "No description", {
+        permanent: true,
+        direction: "center",
+        className: "polygon-label"
+      });
+      drawnItems.addLayer(polygon);
     });
   });
 
-// Routing
 let fromMarker = null, toMarker = null, routeLine = null;
 
 function updateRoute() {
@@ -208,7 +219,6 @@ function updateRoute() {
   }
 }
 
-// Handle From/To Input
 document.getElementById("from").addEventListener("change", () => {
   const val = document.getElementById("from").value.split(",");
   if (val.length === 2) {
